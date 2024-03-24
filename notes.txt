@@ -1,0 +1,381 @@
+  1- what is Mongoose
+  2- using mongoose in node app
+
+
+  #### What is Mongoose?
+
+Mongoose is an Object Document Mapping (ODM) library for MongoDB. It allows developers to work with MongoDB in a more convenient and efficient way by providing a higher-level abstraction for interacting with the database. 
+
+#### How does Mongoose work?
+
+Mongoose allows you to define models and schemas that represent the structure of your data. A schema defines the properties and types of the data, while a model is an instance of a schema that allows you to perform CRUD operations on the database. 
+
+With Mongoose, you can define how your data should look like and then work with it using JavaScript objects. Mongoose handles the mapping between your objects and the documents in the MongoDB collection, making it easier to work with data in a document-oriented database like MongoDB.
+
+#### How is Mongoose similar to Sequelize?
+
+Mongoose is similar to Sequelize, which is an Object Relational Mapping (ORM) library for SQL databases. Both Mongoose and Sequelize aim to simplify database interactions by providing a higher-level abstraction. They allow you to define models and schemas, and handle the mapping between your objects and the database.
+
+The main difference is that Mongoose is designed for MongoDB, which is a document database, while Sequelize is designed for SQL databases. MongoDB stores data in JSON-like documents, while SQL databases store data in tables. Therefore, Mongoose is an ODM, while Sequelize is an ORM.
+
+#### Conclusion
+
+Mongoose is an ODM library for MongoDB that allows you to work with MongoDB in a more convenient and efficient way. It provides a higher-level abstraction for interacting with the database, allowing you to define models and schemas and handle the mapping between your objects and the database. Mongoose is similar to Sequelize, but is specifically designed for MongoDB, which is a document database.
+
+### the difference between Mongoose and MongoDB
+
+The main difference between Mongoose and MongoDB is that Mongoose is an Object Data Modeling (ODM) library for MongoDB, while MongoDB is the actual database management system.
+
+MongoDB is a popular document-oriented database that stores data in collections of JSON-like documents. It provides a flexible and scalable way to store data, making it ideal for building web applications and other data-driven systems.
+
+On the other hand, Mongoose is a JavaScript library commonly used in Node.js applications to work with MongoDB databases. It provides a higher-level abstraction layer on top of MongoDB, allowing developers to define their data models using a schema-based approach. Mongoose simplifies the process of working with MongoDB by providing a consistent API and additional features such as schema validation, typecasting, and middleware functionality.
+
+In summary, MongoDB is the database management system responsible for storing and retrieving data, while Mongoose is a library that makes it easier to interact with MongoDB databases in a Node.js application. MongoDB provides the core functionality, while Mongoose adds convenience and additional features on top of that functionality.
+
+Please note that Mongoose is not a separate database, but rather a tool that helps developers work with MongoDB more efficiently.
+
+====> concept  of modeling data with Mongoose <=====
+
+ Schemas & Models => Ex: User, Product
+ instance => Ex: const  user = new User({ name : "ahmed"})
+ Queries => Ex: User.find()
+
+
+================================================
+
+1- connect to database   in app.js
+
+        1=> const mongoose = require("mongoose");
+        2=> Mongoose.connect(
+                            "mongodb+srv://ahmedbasuony:u4bpmTIoQBOUcDaY@cluster0.2jgswxg.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+                        )
+                        .then((result) => app.listen(3000))
+                        .catch((err) => console.log(err));
+
+        3=> ("url + database name")  instead of create the database name manually
+           EX: "mongodb+srv://ahmedMongoose:4ty6f8y7g.mongodb.net/myMongoose-db",
+
+
+2- create a schema for your product
+
+        =>      const mongoose = require("mongoose");
+                const Schema = mongoose.Schema;
+
+                const productSchema = new Schema({
+                    title: { type: String, required: true },
+                    price: { type: Number, required: true },
+                    description: { type: String, required: true },
+                    imageUrl: { type: String, required: true }, // id will add automatically
+                    userId: {
+                        type: Schema.Types.ObjectId, // type: Schema.Types.ObjectId,: This specifies that the userId field should be of type ObjectId, which is a 12-byte BSON type used to uniquely identify documents in a MongoDB collection. The Schema.Types object is a namespace provided by Mongoose that contains various data types for defining schemas.
+                        ref: "User", // ref: "User",=> Which other mongoose model related to the data in that field , This specifies that the userId field is a reference to the User model.
+                        required: true,
+                    }, // Mongoose uses this information to create an association between the current schema and the User schema.
+                });
+                module.exports = mongoose.model("Product", productSchema);
+
+
+     =>   mongoose take the "Product" model name turn it into => products  (lower case + s)
+
+
+3- CRUD operations  
+                first import this  => const Product = require("../models/product");
+
+ // ===============================Create PRODUCTS===================================
+
+                1-Create (Insert):
+                    Route: postAddProduct handles the creation of a new product.
+                    Mongoose Method:
+                        const product = new Product({ title, price, description, imageUrl });
+                        Product.save() is used to save a new product to the database.
+
+
+ // ===============================Read PRODUCTS===================================
+
+                2- Read (Find):
+                    Route: getProducts retrieves all products from the database.
+                    Mongoose Method: Product.find() is used to find all products in the database.
+
+
+// =============================== Update PRODUCTS===================================
+
+            3- update
+                    Route: postEditProduct updates an existing product.
+                    Mongoose Method: Product.updateOne() is used to update a product in the database.
+                     (Note: Your commented-out code for updating using findById and save would work as well.)
+                    
+                    getEditProduct  
+                    // ------------get  edit product--------------
+
+                            exports.getEditProduct = (req, res, next) => {
+                            const editMode = req.query.edit;
+                            if (!editMode) {
+                                return res.redirect("/");
+                            }
+                            const prodId = req.params.productId;
+                            Product.findById(prodId)
+                                .then((product) => {
+                                if (!product) {
+                                    return res.redirect("/");
+                                }
+                                res.render("admin/edit-product", {
+                                    pageTitle: "Edit Product",
+                                    path: "/admin/edit-product",
+                                    editing: editMode,
+                                    product: product,
+                                });
+                                })
+                                .catch((err) => console.log(err));
+                            };
+
+                            // ------------post  edit product --------------
+
+                            exports.postEditProduct = (req, res, next) => {
+                            const prodId = req.body.productId;
+                            const updatedTitle = req.body.title;
+                            const updatedPrice = parseFloat(req.body.price); // convert price to number
+                            const updatedImageUrl = req.body.imageUrl;
+                            const updatedDesc = req.body.description;
+
+                            // Product.findById(prodId)
+                            //   .then((product) => {
+                            //     product.title = updatedTitle;
+                            //     product.price = updatedPrice;
+                            //     product.imageUrl = updatedImageUrl;
+                            //     product.description = updatedDesc;
+
+                            //     return product.save();
+                            // })    // => or
+
+                            Product.updateOne({
+                                title: updatedTitle,
+                                price: updatedPrice,
+                                description: updatedDesc,
+                                imageUrl: updatedImageUrl,
+                            })
+                                .then((result) => {
+                                console.log("updated product");
+                                res.redirect("/admin/products");
+                                })
+                                .catch((err) => console.log(err));
+                            };
+
+
+
+ // ===============================DELETE PRODUCTS===================================
+             4- Delete:
+
+                Route: postDeleteProduct deletes an existing product.
+                Mongoose Method: Product.findByIdAndDelete() is used to find a product by ID and delete it from the database.
+
+
+
+
+
+
+ ================== User ================================================
+1- create a userSchema                              
+                              const mongoose = require("mongoose");
+
+
+                                const Schema = mongoose.Schema;
+
+                                const userSchema = new Schema({
+                                name: {
+                                    type: String,
+                                    required: true,
+                                },
+                                email: {
+                                    type: String,
+                                    required: true,
+                                },
+                                cart: {
+                                    items: [
+                                    {
+                                        productId: { type: Schema.Types.ObjectId,
+                                                         ref: "Product", //as a reference to Product
+                                                         required: true 
+                                                    },
+                                        quantity: { type: Number, required: true },
+                                    },
+                                    ],
+                                },
+                                });
+
+                                module.exports = mongoose.model("User", userSchema);
+
+
+
+2- create a user before connect your database and run the server
+     1- import user
+            const User = require("./models/user");
+     
+     2- create user before connection and check if there is a user
+                    mongoose
+                .connect(
+                    "mongodb+srv://mongoose-practice:4ty6f8y7Vk8yOv0T@cluster0.2jgswxg.mongodb.net/myMongoose-db"
+                )
+                .then((result) => {
+                    // 2=> create a user
+                    User.findOne().then((user) => {
+                    if (!user) {
+                        const user = new User({
+                        name: "ahmed",
+                        email: "ahmed@gmail.com",
+                        cart: {
+                            items: [],
+                        },
+                        });
+                        user.save();
+                    }
+                    });
+                    console.log("Connected to MongoDB");
+                    app.listen(3000);
+                })
+                .catch((err) => console.error("Error connecting to MongoDB:", err));
+
+
+    3- find a user and send it to req.user to  use in other routes
+                        // You should use this middleware function when you need to authenticate a user in your application. By finding the user document and attaching it to the req object, you can easily access the user's information in subsequent middleware functions or routes.
+                        app.use((req, res, next) => {
+                        User.findById("65fe26fbbda9efa977fe1180")
+                            .then((user) => {
+                            req.user = user;
+                            next();
+                            })
+                            .catch((err) => console.log(err));
+                        });
+
+
+                        Example : For example, you might use this middleware function in a route that requires authentication, such as a user profile page. By checking if req.user is defined, you can ensure that only authenticated users can access the page.
+                                    app.get('/profile', (req, res, next) => {
+                                    if (!req.user) {
+                                        return res.status(401).send('Unauthorized');
+                                    }
+
+                                    // User is authenticated, continue with the route logic
+                                    res.send(`Welcome, ${req.user.name}!`);
+                                    });
+
+                                  =>  In this example, the route checks if req.user is defined. If it is not, the route sends a 401 Unauthorized response. If req.user is defined, the route sends a welcome message that includes the user's name.
+                                 =>  Regarding the placement of this middleware function in your application, you should mount it on the app using the app.use() method before any routes that require authentication. This ensures that the user document is attached to the req object before the route is executed.
+
+                                 Here is an example of how you might mount this middleware function on your app:
+                                        const express = require('express');
+                                            const User = require('./models/user');
+
+                                            const app = express();
+
+                                            // Mount the authentication middleware
+                                            app.use((req, res, next) => {
+                                            User.findById("65fe26fbbda9efa977fe1180")
+                                                .then((user) => {
+                                                req.user = user;
+                                                next();
+                                                })
+                                                .catch((err) => console.log(err));
+                                            });
+
+                                            // Mount routes that require authentication after the authentication middleware
+                                            app.get('/profile', (req, res, next) => {
+                                            if (!req.user) {
+                                                return res.status(401).send('Unauthorized');
+                                            }
+
+                                            // User is authenticated, continue with the route logic
+                                            res.send(`Welcome, ${req.user.name}!`);
+                                            });
+
+                                            // Start the server
+                                            app.listen(3000, () => {
+                                            console.log('Server started on port 3000');
+                                            });
+
+    4- in Product model create 
+        userId: {
+            type: Schema.Types.ObjectId,  //type: Schema.Types.ObjectId,: This specifies that the userId field should be of type ObjectId, which is a 12-byte BSON type used to uniquely identify documents in a MongoDB collection. The Schema.Types object is a namespace provided by Mongoose that contains various data types for defining schemas.
+            ref: "User", // ref: "User",=> Which other mongoose model related to the data in that field : This specifies that the userId field is a reference to the User model. 
+        }, // Mongoose uses this information to create an association between the current schema and the User schema. 
+
+        => This allows you to create associations between documents in different collections and enables populating related documents when querying.
+        => You would use this schema definition when you have a Mongoose model that needs to reference a User document in your MongoDB database. For example, if you have a Post model that belongs to a User, you would include a userId field in your Post schema to reference the User who created the post.
+
+
+    5- on postAddProduct route  add userId = req.user._id come from req.user  of code :
+            const product = new Product({
+                title,
+                price,
+                description,
+                imageUrl,
+                userId: req.user._id, // or (req.user) mongoose will pick the id  by default
+            });
+            product
+                .save()
+
+                req.user._id => come from middleware  app.js  we want the id only not the entire user
+                                app.use((req, res, next) => {
+                                        User.findById("65fe26fbbda9efa977fe1180")
+                                            .then((user) => {
+                                            req.user = user;
+                                            next();
+                                            })
+                                            .catch((err) => console.log(err));
+                                    });
+
+    6-.select("fields") to control which fields will be shown in the response
+            EX: .select('title price -_id') means that it will  show only "title" and "price", but without "_id". 
+                            when you make a get request for products  
+    7-.populate("fieldName") to  show data from other model like from user model => userId, name
+            EX: .populate("userId", "name") 
+
+    exports.getProducts = (req, res, next) => {
+            Product.find()
+                .select("title price -_id") // control which fields  will be shown in the response
+                .populate("userId", "name") //  populate user name from user id  OR automatic populate related fields and fetch the related data
+                .then((products) => {
+                console.log(products);
+                res.render("admin/products", {
+                    prods: products,
+                    pageTitle: "Admin Products",
+                    path: "/admin/products",
+                });
+                })
+                .catch((err) => console.log(err));
+            };
+
+        products will be like => [
+                                    {
+                                        title: 'Atomic Habits',
+                                        price: 30.57,
+                                        userId: { _id: new ObjectId('65fe28be8a99e95002e24fe7'), name: 'ahmed' }
+                                    }
+                                ]
+
+
+
+=> how to create a method  that can work on all models ???
+==> use mongoose methods , they are built-in and they will work on every document of your schema
+
+ This method will be available on all instances of the User model created from this schema.
+
+    Ex: userSchema.methods.addToCart = function (product) { /// logic}
+    to access : req.user.addToCart(product);
+
+        Ex:userSchema.methods.removeFromCart = function (productId) {
+            const updatedCartItems = this.cart.items.filter(
+                (item) => item.productId.toString() !== productId.toString()
+            );
+            this.cart.items = updatedCartItems;
+            return this.save();
+            };
+    
+    to access: ==>
+                req.user
+                .removeFromCart(prodId)
+                .then((result) => {
+                res.redirect("/cart");
+                })
+                .catch((err) => console.log(err));
+    ===============================
+
+The populate() method should return a promise, which should be callable with execPopulate()
